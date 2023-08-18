@@ -338,3 +338,65 @@ app.get('/api/orders-by-month', async (req, res) => {
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
+-----------------------------------------------------
+const express = require('express');
+const geolib = require('geolib');
+
+const app = express();
+const port = 3000;
+
+app.use(express.json());
+
+// Define the geofenced area (center and radius)
+const geofenceCenter = { latitude: 37.7749, longitude: -122.4194 };
+const geofenceRadius = 1000; // in meters
+
+// API endpoint to check if a location is within the geofenced area
+app.post('/api/check-geofence', (req, res) => {
+    const { latitude, longitude } = req.body;
+
+    const isInsideGeofence = geolib.isPointInCircle(
+        { latitude, longitude },
+        geofenceCenter,
+        geofenceRadius
+    );
+
+    res.json({ isInsideGeofence });
+});
+
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
+
+--------------------------------------------------------------------
+
+const express = require('express');
+const mongoose = require('mongoose');
+const User = require('./models/user'); // Replace with your path to the user model
+
+const app = express();
+mongoose.connect('mongodb://localhost/mydatabase', { useNewUrlParser: true, useUnifiedTopology: true }); // Replace with your MongoDB connection details
+
+app.get('/users-last-x-months/:months', async (req, res) => {
+  try {
+    const months = parseInt(req.params.months);
+    if (isNaN(months) || months < 1) {
+      return res.status(400).json({ error: 'Invalid input for months' });
+    }
+
+    const fromDate = new Date();
+    fromDate.setMonth(fromDate.getMonth() - months);
+
+    const users = await User.find({ createdAt: { $gte: fromDate } });
+    res.json(users);
+  } catch (error) {
+    console.error('Error retrieving users:', error);
+    res.status(500).json({ error: 'Error retrieving users' });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
